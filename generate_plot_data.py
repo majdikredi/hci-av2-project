@@ -3,11 +3,16 @@ from pathlib import Path
 import json
 import os
 
-def generate_visualization_data():
-    dataset_dir = Path("/home/majdikredi/argoverse_data/sensor")
+def generate_visualization_data(dataset_import):
+    #dataset_dir = Path("/home/majdikredi/argoverse_data/sensor")
+    #dataset_dir = Path("C:/Users/amosb/Documents/civdata/t8/HCI/sensor")
     
     # Create a subfolder where all JSON files for plotting will be stored
-    output_dir = Path("/home/majdikredi/hci_project/plot_data")
+    #output_dir = Path("/home/majdikredi/hci_project/plot_data")
+    dataset_dir = Path(dataset_import)
+
+    #output_dir = Path("C:/Users/amosb/Documents/civdata/t8/HCI/project/hci-av2-project/plot_data")
+    output_dir = Path(__file__).parent / "plot_data"
     output_dir.mkdir(parents=True, exist_ok=True)
     
     feather_files = list(dataset_dir.rglob("annotations.feather"))
@@ -25,10 +30,10 @@ def generate_visualization_data():
             
             # Only extract the columns we need
             # tx_m = X-coordinate, ty_m = Y-coordinate
-            plot_data = frame_df[['category', 'tx_m', 'ty_m']].copy()
+            plot_data = frame_df[['category', 'tx_m', 'ty_m','timestamp_ns']].copy()
             
             # Rename the columns to make them clearer
-            plot_data.columns = ['category', 'x', 'y']
+            plot_data.columns = ['category', 'x', 'y','timestamp_ns']
             
             # Convert to a list of dictionaries and save
             output_file = output_dir / f"{log_id}.json"
