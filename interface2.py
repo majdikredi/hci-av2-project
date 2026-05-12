@@ -366,8 +366,9 @@ def import_button():
 #For opening file-system using tkinter. One file at a time. 
     
 def importer():
-    root = tk.Tk()
-    root.withdraw()
+    root = tk.Tk() 
+    root.withdraw() #Hides annoying tkinter window.
+    root.attributes("-topmost", True)
     path = filedialog.askdirectory(initialdir=".", title = "Select Folder" )
     root.destroy()
     return path
