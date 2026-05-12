@@ -18,7 +18,7 @@ st.markdown(
 )
 
 
-path_list = []
+path_list = [] #List for holding all the different paths. 
 
 
 #For tabs 
@@ -59,8 +59,6 @@ def button_export(df_to_export):
 
 def stream_lit():
     
-    
-   
    #Filter tab
     with tab1:
         import_button()
@@ -68,10 +66,10 @@ def stream_lit():
         big_df = load_data() #Loading in the file. 
 
         if big_df.empty: 
-            st.warning("No json-files inside the folder...")
+            st.warning("No json-files inside the folder...") # Writes a warning in streamlit 
             return
 
-        if "category" not in big_df.columns:
+        if "category" not in big_df.columns: 
             st.error("category missing")
             return
 
@@ -80,59 +78,54 @@ def stream_lit():
 
         
         # counting number of objects in frames and categories. 
-        #Sorting the numbers of frames with numver of objects for each frame.
-        count_df = (
-            big_df.groupby(["frame", "category"])
-            .size()
-            .reset_index(name="count")
-        )
+        #Sorting the numbers of frames with numver of objects for each frame and creating a new data-frame. 
+        count_df = (big_df.groupby(["frame", "category"]).size().reset_index(name="count"))  
 
-        #creating a sidebar with multiselection for each category
-        with st.sidebar:
+        #creating a sidebar with multiselection for each category 
+        with st.sidebar: 
             st.header("Find frame")
-            
-            selected_categories = st.multiselect("Select Categories", categories)
+            selected_categories = st.multiselect("Select Categories", categories)  #Returns a list of the selected categories in the drop-down slider. 
             
 
-        slider_values = {}
-
+        slider_values = {} #Dict for all the vales from the sliders. 
+        
         
         #creating sliders for each category. Get the slider value
         
         with st.sidebar:
-            for cat in selected_categories:
-                max_count = int(count_df[count_df["category"] == cat]["count"].max())
+            for cat in selected_categories: #for each category, in the list of selected categories. 
+                max_count = int(count_df[count_df["category"] == cat]["count"].max())  #Find the ocurrences in each category 
+                #create sliders for eeach category. The max_count is the maximum count of occurences for each category. 
                 slider_values[cat] = st.slider(
                     f"Antal {cat}",
                     min_value=0,
                     max_value=max_count,
                     value=0,
                     key=f"slider_{cat}"
-                )
+                ) 
+
+
 
         # Starting all frames. 
-        matching_frames = set(big_df["frame"].unique()) # Gets all unique frame names. No duplicates. Set converts into pythonlist
+        matching_frames = set(big_df["frame"].unique()) # Gets all unique frame names. No duplicates. Set converts into python set for unique values. 
 
         # Filtrera framen som matchar EXAKT antal för varje vald kategori
-        for cat, desired_count in slider_values.items(): #Looks trough the slider values and match with the count of each category. 
-            matching_for_cat = set(
-                count_df[
-                    (count_df["category"] == cat) &
-                    (count_df["count"] == desired_count)
-                ]["frame"].unique()
-            )
+        for cat, desired_count in slider_values.items(): #Looks trough the slider values (dict) and match with the count of each category. 
+            #hitta alla frames där 
+            matching_for_cat = set(count_df[(count_df["category"] == cat) & (count_df["count"] == desired_count)]["frame"].unique()) #Using intersection to match with slider values and its categories. 
 
             # Only used when the 0 - category is used. 
-            if desired_count == 0: 
-                frames_with_cat = set(
-                    count_df[count_df["category"] == cat]["frame"].unique() #finds all frames where the category exists at least once. 
-                )
+            if desired_count == 0:  
+                frames_with_cat = set(count_df[count_df["category"] == cat]["frame"].unique()) #finds all frames where the category exists at least once. 
                 all_frames = set(big_df["frame"].unique()) #create set of all frames in the whole dataset. 
+                #Finding frames without that categories. 
                 frames_without_cat = all_frames - frames_with_cat # Take all secenarios, remove the ones that contains this category.
                 matching_for_cat = matching_for_cat | frames_without_cat #Adds the frames with no such category to the already matching frame. 
 
             matching_frames = matching_frames & matching_for_cat #Keeps only frames that were already valid, and match current category condition
-
+        
+        
+        #The filtered frame containing  all the matching frames with the "selection through sliders"
         filtered_df = big_df[big_df["frame"].isin(matching_frames)]
 
         st.subheader("Matching frames")
@@ -142,7 +135,6 @@ def stream_lit():
             st.info("No matching frames.")
             return
 
-        
         
         # Visa summering per frame och kategori
         filtered_count_df = (
@@ -161,6 +153,9 @@ def stream_lit():
         with col2:
             st.subheader("All objects in matching frames")
             st.dataframe(filtered_df, width = "content")
+    
+    
+    
             
     #Plot tab         
     with tab2: 
@@ -216,7 +211,6 @@ def stream_lit():
         )
         )
         
- 
         fig1.update_xaxes(
         showgrid=True,
         gridcolor="rgba(255,255,255,0.1)",
@@ -246,6 +240,10 @@ def stream_lit():
     with tab4:
         play_frame_button(filtered_df)
         
+        
+        
+        
+  #This function simply plots each dataframe when called.       
 def play_2D_map(df,placeholder):
     
     
@@ -254,7 +252,7 @@ def play_2D_map(df,placeholder):
     df,
     x="x",
     y="y",
-    color="category",   # optional
+    color="category",   
     title="Object X-Y coordinates by Category surrounding the car" 
     )
     fig2.add_scatter(
@@ -284,14 +282,18 @@ def play_2D_map(df,placeholder):
     placeholder.plotly_chart(fig2, use_container_width=True)
     
      
+     
+     
+     #This button uses the already filtered frames play frame by frame in streamlit. 
 def play_frame_button(filtered_df):
     
     st.header("Interactive 2D map")
 
-    play_back = filtered_df
-    play_back["time_index"] = 0
-    placeholder = st.empty()
-    col1, col2, col3 = st.columns(3)
+    play_back = filtered_df #The filtered dataframes. 
+    play_back["time_index"] = 0 
+    placeholder = st.empty()  #Reserved empty place. 
+    
+    col1, col2, col3 = st.columns(3) #columns for each button. 
     with col1: 
         play = st.button("Play frame")
     with col2: 
@@ -300,20 +302,20 @@ def play_frame_button(filtered_df):
         forward = st.button("Next frame")
         
     
-    if "play_state" not in st.session_state:
+    if "play_state" not in st.session_state: #Initiating empty streamlit "dict" for storing data. Each time a user interacts with streamlit, it updates so variables are not stored. 
         st.session_state.play_state = 0
 
   
-    timestamps = sorted(play_back["timestamp_ns"].unique())
-    frame_lenght = len(play_back["timestamp_ns"].unique())
+    timestamps = sorted(play_back["timestamp_ns"].unique()) #list of all frames sorted according to time. 
+    frame_lenght = len(play_back["timestamp_ns"].unique()) #Same but with lenght
     text_placeholder= st.empty()
-    if play: 
+    if play:  #if play button is pressed.. 
         st.write()
-        for i, timestamp_ns in enumerate(sorted(play_back["timestamp_ns"].unique())):
-            df = play_back[play_back["timestamp_ns"] == timestamp_ns]
-            text_placeholder.write(f"Timestamp: {timestamp_ns}")
-            play_2D_map(df,placeholder)
-            time.sleep(0.5)
+        for i, timestamp_ns in enumerate(sorted(play_back["timestamp_ns"].unique())): #Loop over the timestamps in sorted order. 
+            df = play_back[play_back["timestamp_ns"] == timestamp_ns] #Save the frame. 
+            text_placeholder.write(f"Timestamp: {timestamp_ns}") #add txt to placeholder 
+            play_2D_map(df,placeholder) #Run function to plot map frame by frame 
+            time.sleep(0.5) #small delay in loop. Could make this into a button if we want to controll.
         
     
     if forward and st.session_state.play_state <frame_lenght - 1:
@@ -335,43 +337,43 @@ def play_frame_button(filtered_df):
      
 def import_button(): 
 
-    clicked = st.button("Import Folder", type="primary")
+    clicked = st.button("Import Folder", type="primary") #Uses st button  for clicked.  
 
-    if "paths" not in st.session_state:
-        st.session_state["paths"] = []
+    if "paths" not in st.session_state: #Checking if there is a path avalible in state
+        st.session_state["paths"] = []  # Initiates an empty slot. 
 
-    if clicked:
+    if clicked: # Clicked is abool. Returns true if clicked. 
         
-        selected_path = importer()
-        gn_data.generate_visualization_data(selected_path)
-        if selected_path and selected_path not in st.session_state["paths"]:
-            st.session_state["paths"].append(selected_path)
-        if st.session_state["paths"] not in path_list:
+        selected_path = importer() #Calling in the tkinter functions to find native path. 
+        gn_data.generate_visualization_data(selected_path)  #Using Majdi's function to read from a folder. Imported fron workspace folder. 
+        if selected_path and selected_path not in st.session_state["paths"]: 
+            st.session_state["paths"].append(selected_path) # Checking if the path is in session_state["path"] and appends if not.  
+        if st.session_state["paths"] not in path_list:  #Adding to path_list. 
             path_list.append(path_list.append(selected_path))
             
     
-    for i, p in enumerate(st.session_state["paths"]):
-        col1, col2 = st.columns([1, 1])
+    for i, p in enumerate(st.session_state["paths"]):  #This is for creating buttons on the fly as the size of frames may increase with multiple folders selected. 
+        col1, col2 = st.columns([1, 1]) # Left position for the pathname and right for remove-button. 
         
         with col1:
             st.write(p)
         with col2:
-            if st.button("Remove", key=f"remove_{i}"):
-                del st.session_state["paths"][i]
-                st.rerun()
-        
+            if st.button("Remove", key=f"remove_{i}"): 
+                del st.session_state["paths"][i] #Removing the path when pressed removed. 
+                st.rerun() #Updating streamlit. 
+         
     
     
 
 #For opening file-system using tkinter. One file at a time. 
     
 def importer():
-    root = tk.Tk() 
+    root = tk.Tk()  
     root.withdraw() #Hides annoying tkinter window.
     root.attributes("-topmost", True)
-    path = filedialog.askdirectory(initialdir=".", title = "Select Folder" )
-    root.destroy()
-    return path
+    path = filedialog.askdirectory(initialdir=".", title = "Select Folder" ) #Getting the local path for a folder. 
+    root.destroy() 
+    return path #Returns the path as a string. 
 
 
 
