@@ -264,93 +264,84 @@ def stream_lit():
         play_frame_button(filtered_df)
 
 
-# This function simply plots each dataframe when called.
-def play_2D_map(df, placeholder):
+def play_2D_map_animated(df):
+    view_range = 70 
 
+    # 1. THE MAGIC: "animation_frame" tells Plotly to build a video automatically
     fig2 = px.scatter(
         df,
         x="x",
         y="y",
         color="category",
+        animation_frame="timestamp_ns", 
+        range_x=[-view_range, view_range],
+        range_y=[-view_range, view_range],
         title="Object X-Y coordinates by Category surrounding the car",
     )
-    fig2.add_scatter(
-        x=[0],
-        y=[0],
-        mode="text",
-        text=["🚗"],
-        textfont=dict(size=20),
-        name="Car position",
+    
+    # 2. Add concentric radar rings
+    for radius in [20, 40, 60]:
+        fig2.add_shape(
+            type="circle",
+            xref="x", yref="y",
+            x0=-radius, y0=-radius, x1=radius, y1=radius,
+            line=dict(color="rgba(255, 255, 255, 0.15)", width=1, dash="dash"),
+        )
+    
+    fig2.update_traces(marker=dict(size=12, opacity=0.8, line=dict(width=1, color='DarkSlateGrey')))
+
+    # 3. Add ego vehicle as an annotation (so it stays in every single frame of the animation)
+    fig2.update_layout(
+        annotations=[
+            dict(
+                x=0, y=0, xref="x", yref="y",
+                text="🚗", showarrow=False, font=dict(size=24)
+            )
+        ],
+        template="plotly_dark",
+        plot_bgcolor="rgba(20,20,20,1)",
+        paper_bgcolor="rgba(20,20,20,1)",
+        font=dict(color="white"),
+        showlegend=True,
+        legend=dict(
+            x=1.02, y=1,
+            font=dict(size=12, color="white"),
+            bgcolor="rgba(30,30,30,0.5)",
+            bordercolor="rgba(255,255,255,0.2)",
+            borderwidth=1
+        )
     )
-    fig2.update_xaxes(
-        showgrid=True, gridcolor="rgba(255,255,255,0.1)", zeroline=False, showline=False
-    )
 
-    fig2.update_yaxes(
-        showgrid=True, gridcolor="rgba(255,255,255,0.1)", zeroline=False, showline=False
-    )
+    # 4. CRITICAL: Speed up the native Plotly player to "Super Fast" (50ms per frame)
+    if fig2.layout.updatemenus:
+        fig2.layout.updatemenus[0].buttons[0].args[1]["frame"]["duration"] = 50
+        fig2.layout.updatemenus[0].buttons[0].args[1]["transition"]["duration"] = 0 # Disables "morphing" between dots
 
-    fig2.update_yaxes(scaleanchor="x", scaleratio=1)
+    fig2.update_xaxes(showgrid=True, gridcolor="rgba(255,255,255,0.05)", zeroline=True, zerolinecolor="rgba(255,255,255,0.3)", showline=False)
+    fig2.update_yaxes(showgrid=True, gridcolor="rgba(255,255,255,0.05)", zeroline=True, zerolinecolor="rgba(255,255,255,0.3)", showline=False, scaleanchor="x", scaleratio=1)
 
-    placeholder.plotly_chart(fig2, use_container_width=True)
+    st.plotly_chart(fig2, use_container_width=True)
 
-    # This button uses the already filtered frames play frame by frame in streamlit.
-
-
+    
 def play_frame_button(filtered_df):
+    st.header("Interactive 2D Map (Native Playback)")
 
-    st.header("Interactive 2D map")
+    scenario_id = st.selectbox(
+        label="Select a scenario to play", 
+        options=filtered_df["frame_id"].unique(),
+        key="playback_select"
+    )
 
-    play_back = filtered_df  # The filtered dataframes.
-    play_back["time_index"] = 0
-    placeholder = st.empty()  # Reserved empty place.
+    # Filter out the scenario and SORT by timestamp so the video plays in order
+    scenario_df = filtered_df[filtered_df["frame_id"] == scenario_id].copy()
+    scenario_df = scenario_df.sort_values("timestamp_ns")
 
-    col1, col2, col3 = st.columns(3)  # columns for each button.
-    with col1:
-        play = st.button("Play frame")
-    with col2:
-        backward = st.button("Previous Frame")
-    with col3:
-        forward = st.button("Next frame")
+    if scenario_df.empty:
+        st.warning("No frames found for this scenario.")
+        return
 
-    if (
-        "play_state" not in st.session_state
-    ):  # Initiating empty streamlit "dict" for storing data. Each time a user interacts with streamlit, it updates so variables are not stored.
-        st.session_state.play_state = 0
-
-    timestamps = sorted(
-        play_back["timestamp_ns"].unique()
-    )  # list of all frames sorted according to time.
-    frame_lenght = len(play_back["timestamp_ns"].unique())  # Same but with lenght
-    text_placeholder = st.empty()
-    if play:  # if play button is pressed..
-        st.write()
-        for i, timestamp_ns in enumerate(
-            sorted(play_back["timestamp_ns"].unique())
-        ):  # Loop over the timestamps in sorted order.
-            df = play_back[play_back["timestamp_ns"] == timestamp_ns]  # Save the frame.
-            text_placeholder.write(
-                f"Timestamp: {timestamp_ns}"
-            )  # add txt to placeholder
-            play_2D_map(df, placeholder)  # Run function to plot map frame by frame
-            time.sleep(
-                0.5
-            )  # small delay in loop. Could make this into a button if we want to controll.
-
-    if forward and st.session_state.play_state < frame_lenght - 1:
-        st.session_state.play_state += 1
-        current_ts = timestamps[st.session_state.play_state]
-        df = play_back[play_back["timestamp_ns"] == current_ts]
-        text_placeholder.write(f"Timestamp: {current_ts}")
-        play_2D_map(df, placeholder)
-
-    if backward and st.session_state.play_state > 0:
-        st.session_state.play_state -= 1
-        current_ts = timestamps[st.session_state.play_state]
-        df = play_back[play_back["timestamp_ns"] == current_ts]
-        text_placeholder.write(f"Timestamp: {current_ts}")
-        play_2D_map(df, placeholder)
-
+    # Pass the ENTIRE scenario dataframe to the plotter at once
+    play_2D_map_animated(scenario_df)
 
 def import_button():
 

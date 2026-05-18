@@ -25,28 +25,19 @@ def generate_visualization_data(dataset_import):
         try:
             df = pd.read_feather(file_path)
 
-            # Find the very first frame in the scenario
-            first_timestamp = df["timestamp_ns"].min()
-            frame_df = df[df["timestamp_ns"] == first_timestamp]
+            plot_data = df[["category", "tx_m", "ty_m", "timestamp_ns"]].copy()
 
-            # Only extract the columns we need
-            # tx_m = X-coordinate, ty_m = Y-coordinate
-            plot_data = frame_df[["category", "tx_m", "ty_m", "timestamp_ns"]].copy()
-
-            # Rename the columns to make them clearer
             plot_data.columns = ["category", "x", "y", "timestamp_ns"]
 
-            # Convert to a list of dictionaries and save
+            # Save to JSON
             output_file = output_dir / f"{log_id}.json"
             plot_data.to_json(output_file, orient="records", indent=4)
 
             if index % 20 == 0:
-                print(f"Saved coordinates for {index} scenarios...")
+                print(f"Have saved coordinates for {index} scenarios...")
 
         except Exception as e:
-            print(f"Could not process log {log_id}: {e}")
-
-    print(f"Done! All coordinate files are now located in {output_dir}")
+            print(f"couldnt process log {log_id}: {e}")
 
 
 if __name__ == "__main__":
