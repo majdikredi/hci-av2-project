@@ -23,7 +23,7 @@ path_list = []  # List for holding all the different paths.
 # For tabs
 tab1, tab2, tab3, tab4 = st.tabs(["Filter", "Plot", "2D Map", "Frame-shifter"])
 
-
+@st.cache_data
 def load_data(folder_path="plot_data"):
     folder = Path(folder_path)
     all_dfs = []  # list for all data. each json-list = one data frame.
@@ -322,7 +322,7 @@ def play_2D_map_animated(df):
 
     st.plotly_chart(fig2, use_container_width=True)
 
-    
+
 def play_frame_button(filtered_df):
     st.header("Interactive 2D Map (Native Playback)")
 
