@@ -1,11 +1,12 @@
 import pandas as pd
 from pathlib import Path
 import json
+import sys
 
-def aggregate_scenario_data():
+def aggregate_scenario_data(dataset_path):
     # dataset path and where to save data
-    dataset_dir = Path("/home/majdikredi/argoverse_data/sensor")
-    output_file = Path("/home/majdikredi/hci_project/scenarios_metadata.json")
+    dataset_dir = Path(dataset_path)
+    output_file = Path(__file__).parent / "scenarios_metadata.json"
     
     print("Looking for scenarios in the dataset...")
     
@@ -31,7 +32,6 @@ def aggregate_scenario_data():
             unique_objects = df.drop_duplicates(subset=['track_uuid'])
             
             # Count classes and convert to dictionary
-            # we convert numpy int64 to normal int so Json can read it
             category_counts = {k: int(v) for k, v in unique_objects['category'].value_counts().items()}
             
             # create nice data object for this scenario
@@ -57,4 +57,10 @@ def aggregate_scenario_data():
     print("success! Database is finished and ready to use.")
 
 if __name__ == "__main__":
-    aggregate_scenario_data()
+    if len(sys.argv) < 2:
+        print("Usage: python data_aggregator.py <path_to_argoverse_sensor_folder>")
+        print("Example: python data_aggregator.py /home/majdikredi/argoverse_data/sensor")
+        sys.exit(1)
+        
+    user_path = sys.argv[1]
+    aggregate_scenario_data(user_path)
