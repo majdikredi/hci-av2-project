@@ -100,6 +100,32 @@ def button_export(df_to_export):
 # --- PLOTTING FUNCTIONS ---
 def play_2D_map_animated(df):
     view_range = 70
+
+    # MINIMAL FIX: Add a dummy row for each category at the first timestamp (invisible)
+    all_categories = df["category"].unique()
+    first_timestamp = df["timestamp_ns"].min()
+
+    dummy_rows = []
+    for cat in all_categories:
+        if cat not in df[df["timestamp_ns"] == first_timestamp]["category"].values:
+            dummy_rows.append(
+                {
+                    "timestamp_ns": first_timestamp,
+                    "category": cat,
+                    "x": 999,  # Way outside view range
+                    "y": 999,
+                    # Add any other required columns with placeholder values
+                }
+            )
+
+    if dummy_rows:
+        dummy_df = pd.DataFrame(dummy_rows)
+        # Add any missing columns that your df has
+        for col in df.columns:
+            if col not in dummy_df.columns:
+                dummy_df[col] = 0
+        df = pd.concat([df, dummy_df], ignore_index=True)
+
     fig2 = px.scatter(
         df,
         x="x",
@@ -110,6 +136,8 @@ def play_2D_map_animated(df):
         range_y=[-view_range, view_range],
         title="Object X-Y coordinates by Category surrounding the car",
     )
+
+    # Rest of your existing code unchanged...
     for radius in [20, 40, 60]:
         fig2.add_shape(
             type="circle",
