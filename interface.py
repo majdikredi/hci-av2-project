@@ -361,11 +361,15 @@ def stream_lit():
             with st.sidebar:
                 for cat in selected_categories:
                     max_val = int(meta_df[cat].max())
-                    min_val = st.slider(
-                        f"Minimum {cat}", min_value=0, max_value=max_val, value=0
+                    min_selected, max_selected = st.slider(
+                        f"Range of {cat.lower()}(e)s",
+                        min_value=0,
+                        max_value=max_val,
+                        value=(0, max_val),
                     )
                     filtered_meta_df = filtered_meta_df[
-                        filtered_meta_df[cat] >= min_val
+                        (filtered_meta_df[cat] >= min_selected)
+                        & (filtered_meta_df[cat] <= max_selected)
                     ]
 
             st.subheader(f"🎯 Found {len(filtered_meta_df)} matching scenarios")
