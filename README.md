@@ -1,6 +1,6 @@
 # ARGOFILTER  - Interactive Scenario Retrieval
 
-## Contributors: Amos Lund, Majdi Kredi, Rowan De Block
+## Contributors: Amos Lund, Majdi Kredi, Rowan de Blok
 
 ## Course: Advanced Human-Computer Interaction, VT26, DT507A
 
